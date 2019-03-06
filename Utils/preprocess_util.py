@@ -53,12 +53,12 @@ def exponential_running_standardize(data, factor_new=0.001,
 
 def load_preprocess_eeg_data():
     
-    X_test = np.load("X_test.npy")[:,0:22,:]
-    y_test = np.load("y_test.npy")
-    person_train_valid = np.load("person_train_valid.npy")
-    X_train_valid = np.load("X_train_valid.npy")[:,0:22,:]
-    y_train_valid = np.load("y_train_valid.npy")
-    person_test = np.load("person_test.npy")
+    X_test = np.load("../Data/X_test.npy")[:,0:22,:]
+    y_test = np.load("../Data/y_test.npy")
+    person_train_valid = np.load("../Data/person_train_valid.npy")
+    X_train_valid = np.load("../Data/X_train_valid.npy")[:,0:22,:]
+    y_train_valid = np.load("../Data/y_train_valid.npy")
+    person_test = np.load("../Data/person_test.npy")
     
     X_train, X_valid, y_train, y_valid = train_test_split(  X_train_valid, y_train_valid, test_size=0.33,                    random_state=42)
     
