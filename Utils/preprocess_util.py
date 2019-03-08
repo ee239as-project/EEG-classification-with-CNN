@@ -4,8 +4,7 @@ import scipy
 import scipy.signal
 from sklearn.model_selection import train_test_split
 
-
-def exponential_running_demean(data, factor=0.001):
+def exponential_running_demean(data,factor=0.001):
     """
     computes exponential moving mean for each channel given by the formula in
     https://arxiv.org/abs/1703.05051
@@ -55,7 +54,6 @@ def exponential_running_standardize(data, factor_new=0.001, eps=1e-4):
     return standardized
 
 def load_preprocess_eeg_data():
-
     X_test = np.load("../Data/X_test.npy")[:,0:22,:]
     y_test = np.load("../Data/y_test.npy")
     person_train_valid = np.load("../Data/person_train_valid.npy")
