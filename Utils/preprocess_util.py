@@ -54,23 +54,23 @@ def exponential_running_standardize(data, factor_new=0.001, eps=1e-4):
     return standardized
 
 def load_preprocess_eeg_data():
-    X_test = np.load("../Data/X_test.npy")[:,0:22,:]
-    y_test = np.load("../Data/y_test.npy")
-    person_train_valid = np.load("../Data/person_train_valid.npy")
+    # only use first 22 electrodes which are EEG not EOG
     X_train_valid = np.load("../Data/X_train_valid.npy")[:,0:22,:]
     y_train_valid = np.load("../Data/y_train_valid.npy")
+    X_test = np.load("../Data/X_test.npy")[:,0:22,:]
+    y_test = np.load("../Data/y_test.npy")
     person_test = np.load("../Data/person_test.npy")
+    person_train_valid = np.load("../Data/person_train_valid.npy")
     
     X_train, X_valid, y_train, y_valid = train_test_split(X_train_valid,
                                                           y_train_valid,
                                                           test_size=0.33,
                                                           random_state=42)
     
-    #standardize every data point
+    # standardize data points
     X_train_mod = []
     X_valid_mod = []
     X_test_mod = []
-
     for xi in X_train:
         X_train_mod.append(exponential_running_standardize(xi.T, eps=1e-4))
 
@@ -79,31 +79,29 @@ def load_preprocess_eeg_data():
 
     for xi in X_test:
         X_test_mod.append(exponential_running_standardize(xi.T, eps=1e-4))
-
     X_train = np.array(X_train_mod)
     X_valid = np.array(X_valid_mod)
     X_test = np.array(X_test_mod)
     
-    print('Training/Valid data shape: {}'.format(X_train_valid.shape))
-    print('Test data shape: {}'.format(X_test.shape))
-    print('Training/Valid target shape: {}'.format(y_train_valid.shape))
-    print('Test target shape: {}'.format(y_test.shape))
-    print('Person train/valid shape: {}'.format(person_train_valid.shape))
-    print('Person test shape: {}'.format(person_test.shape))
-    print()
-    
-    #removing eog sginals
     X_train = np.transpose(X_train,[0,2,1])
     X_valid = np.transpose(X_valid,[0,2,1])
     X_test = np.transpose(X_test,[0,2,1])
-    print ('Training data shape: {}'.format(X_train.shape))
-    print ('Valid data shape: {}'.format(X_valid.shape))
-    print ('Training target shape: {}'.format(y_train.shape))
-    print ('Valid target shape: {}'.format(y_valid.shape))
+    print ('Training data: {}'.format(X_train.shape))
+    print ('Training target: {}'.format(y_train.shape))
+    print ('Validation data: {}'.format(X_valid.shape))
+    print ('Validation target: {}'.format(y_valid.shape))
+    print ('Test data: {}'.format(X_test.shape))
+    print ('Test target: {}\n'.format(y_test.shape))
     
-    #converting labels to range 0-No. of classes
+    print('Person train/validation: {}'.format(person_train_valid.shape))
+    print('Person test: {}'.format(person_test.shape))
+    
+    # converts labels to range 0-3 for number of classes
     Y_train = np.abs(769 - y_train)
     Y_valid = np.abs(769 - y_valid)
     Y_test = np.abs(769 - y_test)
     
     return X_train,X_valid,X_test,Y_train,Y_valid,Y_test
+
+def threeD_to_fourDTensor(X):
+    return Variable(torch.tensor(X.reshape((X.shape[0],1,X.shape[1],X.shape[2],))))
