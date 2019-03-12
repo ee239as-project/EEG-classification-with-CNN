@@ -131,16 +131,26 @@ def crop_per_timestep(X, y, X_file, y_file):
     del y, y_new
 
 def crop_trials(X_train, y_train, X_valid, y_valid, X_test, y_test,
-                person_tr, person_test):
-    X_train_f = '../Data/X_train_c.npy'
-    y_train_f = '../Data/y_train_c.npy'
-    X_valid_f = '../Data/X_valid_c.npy'
-    y_valid_f = '../Data/y_valid_c.npy'
-    X_test_f = '../Data/X_test_c.npy'
-    y_test_f = '../Data/y_test_c.npy'
-    person_tr_f = '../Data/person_train_valid_c.npy'
-    person_test_f = '../Data/person_test_c.npy'
-
+                person_tr, person_test,person=None):
+    if(person == None):
+            X_train_f = '../Data/X_train_c.npy'
+            y_train_f = '../Data/y_train_c.npy'
+            X_valid_f = '../Data/X_valid_c.npy'
+            y_valid_f = '../Data/y_valid_c.npy'
+            X_test_f = '../Data/X_test_c.npy'
+            y_test_f = '../Data/y_test_c.npy'
+            person_tr_f = '../Data/person_train_valid_c.npy'
+            person_test_f = '../Data/person_test_c.npy'
+    else:
+            X_train_f = '../Data/X_train_c_'+ str(person)+'.npy'
+            y_train_f = '../Data/y_train_c_'+ str(person)+'.npy'
+            X_valid_f = '../Data/X_valid_c_'+ str(person)+'.npy'
+            y_valid_f = '../Data/y_valid_c_'+ str(person)+'.npy'
+            X_test_f = '../Data/X_test_c_'+ str(person)+'.npy'
+            y_test_f = '../Data/y_test_c_'+ str(person)+'.npy'
+            person_tr_f = '../Data/person_train_valid_c_'+ str(person)+'.npy'
+            person_test_f = '../Data/person_test_c_'+ str(person)+'.npy'
+    
     # training data
     if not os.path.exists(X_train_f) or not os.path.exists(y_train_f):
         crop_per_timestep(X_train, y_train, X_train_f, y_train_f)
@@ -154,22 +164,33 @@ def crop_trials(X_train, y_train, X_valid, y_valid, X_test, y_test,
         crop_per_timestep(X_test, y_test, X_test_f, y_test_f)
 
     # person training, validation, and test data
-    if not os.path.exists(person_tr_f) or not os.path.exists(person_test_f):
-        crop_per_timestep(person_tr, person_test, person_tr_f, person_test_f)
+    #if not os.path.exists(person_tr_f) or not os.path.exists(person_test_f):
+        #crop_per_timestep(person_tr, person_test, person_tr_f, person_test_f)
 
     # load all data
     X_train = np.load(X_train_f)
+    print(X_train.shape)
     y_train = np.load(y_train_f)
     X_valid = np.load(X_valid_f)
     y_valid = np.load(y_valid_f)
     X_test = np.load(X_test_f)
     y_test = np.load(y_test_f)
-    person_tr = np.load(person_tr_f)
-    person_test = np.load(person_test_f)
-
+    #person_tr = np.load(person_tr_f)
+    #person_test = np.load(person_test_f)
+    
+    print('After cropping:')
+    print('Training data: {}'.format(X_train.shape))
+    print('Training target: {}'.format(y_train.shape))
+    print('Validation data: {}'.format(X_valid.shape))
+    print('Validation target: {}'.format(y_valid.shape))
+    print('Test data: {}'.format(X_test.shape))
+    print('Test target: {}'.format(y_test.shape))
+    print('Person train/validation: {}'.format(person_tr.shape))
+    print('Person test: {}\n'.format(person_test.shape))
+    
     return X_train, y_train, X_valid, y_valid, X_test, y_test, person_tr, person_test
 
-def load_preprocess_eeg_data():
+def load_preprocess_eeg_data(person=None,crop=True):
     # only use first 22 electrodes which are EEG not EOG
     X_train_valid = np.load('../Data/X_train_valid.npy')[:,0:22,:]
     y_train_valid = np.load('../Data/y_train_valid.npy')
@@ -177,6 +198,18 @@ def load_preprocess_eeg_data():
     y_test = np.load('../Data/y_test.npy')
     person_test = np.load('../Data/person_test.npy')
     person_train_valid = np.load('../Data/person_train_valid.npy')
+    print(X_train_valid.shape)
+    
+    #select a given subjects' trials 
+    if(person is not None):
+        person_train_valid = person_train_valid[:,0]
+        indices_of_subject_train = list(np.argwhere(person_train_valid==person)[:,0])
+        indices_of_subject_test = list(np.argwhere(person_test==person)[:,0])
+        X_train_valid =X_train_valid[indices_of_subject_train,:,:]
+        X_test = X_test[indices_of_subject_test,:,:]
+        y_train_valid = y_train_valid[indices_of_subject_train]
+        y_test = y_test[indices_of_subject_test]
+        print(X_train_valid.shape)
 
     X_train, X_valid, y_train, y_valid = train_test_split(X_train_valid,
                                                           y_train_valid,
@@ -214,10 +247,10 @@ def load_preprocess_eeg_data():
     Person train/validation: (2115, 1)
     Person test: (443, 1)
     '''
+
     # implement cropped training strategy (https://arxiv.org/pdf/1703.05051.pdf)
-    X_train, y_train, X_valid, y_valid, X_test, y_test, person_train_valid,
-    person_test = crop_trials(X_train, y_train, X_valid, y_valid, X_test, y_test,
-                              person_train_valid, person_test)
+    print("Cropping trials")
+    X_train, y_train, X_valid, y_valid, X_test, y_test, person_train_valid,person_test = crop_trials(X_train, y_train, X_valid, y_valid,X_test, y_test,person_train_valid, person_test,person)
     '''
     After cropping:
     Training data: (177125, 22, 500)
@@ -246,6 +279,6 @@ def load_preprocess_eeg_data():
 
     return X_train, X_valid, X_test, Y_train, Y_valid, Y_test
 
-
+ 
 if __name__ == '__main__':
     load_preprocess_eeg_data()
