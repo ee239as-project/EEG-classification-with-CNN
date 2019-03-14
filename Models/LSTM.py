@@ -255,36 +255,14 @@ test_acc = get_accuracy(y_pred_test, Y_test, batch_size=len(Y_test))
 print('Test accuracy:', test_acc)
 '''
 
-def get_accuracy_in_batches(X, Y, seq_dim, input_dim, dataset='', iterations=20):
-    dataset_size = X.shape[0]
-    batch_size = int(dataset_size / iterations)
-    print('Dataset:', dataset_size)
-    print('Batch size:', batch_size)
-
-    start = 0
-    valid_accuracies = []
-    for i in range(iterations):
-        end = start + batch_size
-
-        X_tensor = torch.from_numpy(X[start:end].reshape(-1, seq_dim, input_dim))
-        print(X_tensor.shape)
-        y_pred = model(X_tensor.float())
-        y_true = Y[start:end]
-        val_acc = get_accuracy(y_pred, y_true, batch_size=len(y_true))
-
-        start = end
-        valid_accuracies.append(val_acc)
-    print(dataset, ' accuracy:', np.mean(valid_accuracies))
-
-
 # Validation accuracy
-get_accuracy_in_batches(X_valid, Y_valid, seq_dim, input_dim, 'validation')
+get_accuracy_in_batches(model, X_valid, Y_valid, seq_dim, input_dim, 'validation')
 
-# Testig accuracy
-get_accuracy_in_batches(X_test, Y_test, seq_dim, input_dim, 'testing')
+# Testing accuracy
+get_accuracy_in_batches(model, X_test, Y_test, seq_dim, input_dim, 'testing')
 
 # Training accuracy
-get_accuracy_in_batches(X_train, Y_train, seq_dim, input_dim, 'training', iterations=50)
+get_accuracy_in_batches(model, X_train, Y_train, seq_dim, input_dim, 'training', iterations=50)
 
 # Plot loss vs iterations
 plt.plot(iterations, train_loss)
