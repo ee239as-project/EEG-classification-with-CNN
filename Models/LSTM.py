@@ -80,9 +80,17 @@ class LSTMModel(nn.Module):
         self.n_outputs = n_outputs
         self.num_layers = n_layers
         self.lstm = nn.LSTM(self.n_inputs, self.n_neurons,self.num_layers)
-        #self.lstm.weight_hh_l0.data.fill_(0)
-        torch.nn.init.xavier_uniform_(self.lstm.weight_ih_l0.data)
-        torch.nn.init.orthogonal_(self.lstm.weight_hh_l0.data)
+        # self.lstm.weight_hh_l0.data.fill_(0)
+        # torch.nn.init.xavier_uniform_(self.lstm.weight_ih_l0.data)
+        # torch.nn.init.orthogonal_(self.lstm.weight_hh_l0.data)
+
+        #initialising w(rec) to I and b(rec) to 0
+        ih_size = list(self.lstm.weight_ih_l0.data.shape)
+        hh_size = list(self.lstm.weight_hh_l0.data.shape)
+        self.lstm.weight_ih_l0.data.copy_(torch.eye(ih_size[0], ih_size[1]))
+        self.lstm.weight_hh_l0.data.copy_(torch.eye(hh_size[0], hh_size[1]))
+        self.lstm.bias_ih_l0.data.fill_(0)
+        self.lstm.bias_hh_l0.data.fill_(0)
 
         self.droput = nn.Dropout(p=droput)
         self.FC = nn.Linear(self.n_neurons, self.n_outputs)
@@ -134,7 +142,7 @@ model = LSTMModel(batch_size, N_STEPS, N_INPUTS, N_NEURONS, N_OUTPUTS, N_LAYERS,
 loss_fn = nn.CrossEntropyLoss().type(dtype)
 
 # Optimizer
-optimizer = optim.Adam(model.parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08,
+optimizer = optim.Adam(model.parameters(), lr=0.000001, betas=(0.9, 0.999), eps=1e-08,
                              weight_decay=0, amsgrad=False)
 # optimizer = optim.Adam(model.parameters(), lr=0.01, weight_decay =0, betas=(0.9, 0.999),
 # amsgrad=False)
@@ -198,7 +206,7 @@ for epoch in range(num_epochs):
 
             X_valid_tensor = torch.from_numpy(X_valid[indices].reshape(-1, seq_dim, input_dim))
 
-            y_pred_valid = model( X_valid_tensor.float())
+            y_pred_valid = model(X_valid_tensor.float())
             val_acc = get_accuracy(y_pred_valid, Y_valid[indices], batch_size=50)
 
             # print('Iteration: {}  Loss: {}' .format(count, loss.data))
@@ -233,28 +241,6 @@ for epoch in range(num_epochs):
             '''
 
 # ------------------------------------- ACCURACY -------------------------------------
-# In case running this code gives you an out-of-memory error, you can run the next cell
-# which breaks up the datasets into chunks to calculate the accuracy
-'''
-X_train_tensor = torch.from_numpy(X_train.reshape(-1, seq_dim, input_dim))
-print(X_train_tensor.shape)
-y_pred_train = model(X_train_tensor.float())
-train_acc = get_accuracy(y_pred_train, Y_train, batch_size=len(Y_train))
-print('Training accuracy:', train_acc)
-
-X_valid_tensor = torch.from_numpy(X_valid.reshape(-1, seq_dim, input_dim))
-print(X_valid_tensor.shape)
-y_pred_valid = model(X_valid_tensor.float())
-val_acc = get_accuracy(y_pred_valid, Y_valid, batch_size=len(Y_valid))
-print('Validation accuracy:', val_acc)
-
-X_test_tensor = torch.from_numpy(X_test.reshape(-1, seq_dim, input_dim))
-print(X_test_tensor.shape)
-y_pred_test = model(X_test_tensor.float())
-test_acc = get_accuracy(y_pred_test, Y_test, batch_size=len(Y_test))
-print('Test accuracy:', test_acc)
-'''
-
 # Validation accuracy
 get_accuracy_in_batches(model, X_valid, Y_valid, seq_dim, input_dim, 'validation')
 
