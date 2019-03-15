@@ -6,7 +6,9 @@ if module_path not in sys.path:
 
 import numpy as np
 import torch
+import pickle
 from Utils.preprocess_util import *
+
 
 def get_accuracy(ouput, target, batch_size):
     # get accuracy for training batch
@@ -16,27 +18,42 @@ def get_accuracy(ouput, target, batch_size):
     accuracy = 100.0 * correct / batch_size
     return accuracy.item()
 
-def get_accuracy_in_batches(model, X, Y, seq_dim, input_dim, dataset='', iterations=20, cnn=False):
-    dataset_size = X.shape[0]
-    batch_size = int(dataset_size / iterations)
-    print('Dataset:', dataset_size)
-    print('Batch size:', batch_size)
+def check_accuracy(model, X, y, num_samples=None, batch_size=125):
+    # Subsample the data
+    N = X.shape[0]
+    N_subsample = N // 500 # 0.2% subsample of data
+    if num_samples > N_subsample:
+        mask = np.random.choice(N, N_subsample)
+        N = N_subsample
+        X = X[mask]
+        y = y[mask]
 
-    start = 0
-    valid_accuracies = []
-    for i in range(iterations):
-        end = start + batch_size
+    # Compute predictions in batches
+    n_batches = N // batch_size
+    accuracies = []
+    for i in range(n_batches):
+        start = i * batch_size
+        end = (i+1) * batch_size
 
-        if cnn:
-            y_pred = model(threeD_to_fourDTensor(X[start:end]).float())
-        else:
-            X_tensor = torch.from_numpy(X[start:end].reshape(-1, seq_dim, input_dim))
-            print(X_tensor.shape)
-            y_pred = model(X_tensor.float())
+        X_tensor = threeD_to_fourDTensor(X[start:end])
+        y_pred = model(X_tensor.float())
+        y_true = y[start:end]
 
-        y_true = Y[start:end]
-        val_acc = get_accuracy(y_pred, y_true, batch_size=len(y_true))
+        acc = get_accuracy(y_pred, y_true, len(y_true))
+        accuracies.append(acc)
 
-        start = end
-        valid_accuracies.append(val_acc)
-    print(dataset, ' accuracy:', np.mean(valid_accuracies))
+    return np.mean(accuracies)
+
+def save_checkpoint(epoch, loss_history, train_acc_history, val_acc_history,
+                    best_val_acc, model='cnn'):
+    checkpoint = {
+      'epoch': epoch,
+      'loss_history': loss_history,
+      'train_acc_history': train_acc_history,
+      'val_acc_history': val_acc_history,
+      'best_val_acc': best_val_acc,
+    }
+    filename = '../Data/%s_epoch_%d.pkl' % (model, epoch)
+    print('Saving checkpoint to %s' % filename)
+    with open(filename, 'wb') as f:
+        pickle.dump(checkpoint, f)

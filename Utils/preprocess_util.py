@@ -135,8 +135,8 @@ def crop_trials(X_train, y_train, X_valid, y_valid, X_test, y_test,
         y_valid_f = '../Data/y_valid_c.npy'
         X_test_f = '../Data/X_test_c.npy'
         y_test_f = '../Data/y_test_c.npy'
-        person_tr_f = '../Data/person_train_valid_c.npy'
-        person_test_f = '../Data/person_test_c.npy'
+        # person_tr_f = '../Data/person_train_valid_c.npy'
+        # person_test_f = '../Data/person_test_c.npy'
     else:
         str_p = str(person)
         X_train_f = '../Data/X_train_c_'+ str_p +'.npy'
@@ -145,8 +145,8 @@ def crop_trials(X_train, y_train, X_valid, y_valid, X_test, y_test,
         y_valid_f = '../Data/y_valid_c_'+ str_p +'.npy'
         X_test_f = '../Data/X_test_c_'+ str_p +'.npy'
         y_test_f = '../Data/y_test_c_'+ str_p +'.npy'
-        person_tr_f = '../Data/person_train_valid_c_'+ str_p +'.npy'
-        person_test_f = '../Data/person_test_c_'+ str_p +'.npy'
+        # person_tr_f = '../Data/person_train_valid_c_'+ str_p +'.npy'
+        # person_test_f = '../Data/person_test_c_'+ str_p +'.npy'
 
     # training data
     if not os.path.exists(X_train_f) or not os.path.exists(y_train_f):
