@@ -37,22 +37,22 @@ class Flatten(nn.Module):
 class threed_to_twod(nn.Module):
     def forward(self, x):
         # example x.shape: ([125, 40, 1, 450])
-        a = x.reshape(x.shape[0], x.shape[1], x.shape[3])
+        a = x.reshape(x.shape[0], x.shape[3], x.shape[1])
         # example a.shape: ([125, 450, 40])
         return a
 
-dropout = 0
+dropout = 0.5
 model = nn.Sequential()
 # recommended kernel size of 25
 # After the two convolutions of the shallow ConvNet, a squaring nonlinearity, a mean pooling
 # layer and a logarithmic activation function followed
-model.add_module('conv_across_time', nn.Conv2d(1, 40, kernel_size=(1,25) ,stride=1))
+model.add_module('conv_across_time', nn.Conv2d(1, 40, kernel_size=(1,51) ,stride=1))
 model.add_module('conv_across_electrodes', nn.Conv2d(40, 40, kernel_size=(22,1), stride=1))
 # apply batch norm to the output of conv layers before the nonlinearity
 model.add_module('BatchNorm2d', nn.BatchNorm2d(40, momentum=0.1))
-model.add_module('Nonlinearity', nn.ReLU(inplace=True))
+model.add_module('Nonlinearity', nn.ELU(inplace=True))
 model.add_module('correct_dimensions', threed_to_twod())
-model.add_module('AvgPool2d', nn.AvgPool2d(kernel_size=(75,1), stride=(15,1)))
+model.add_module('AvgPool2d', nn.AvgPool2d(kernel_size=(135,1), stride=(5,1)))
 model.add_module('drop', nn.Dropout(p=dropout))
 model.add_module('Flatten', Flatten())
 model.add_module('Fc_layer', nn.Linear(2560,10))
@@ -64,7 +64,7 @@ dtype = torch.FloatTensor
 model.type(dtype)
 loss_fn = nn.CrossEntropyLoss().type(dtype)
 
-# ---------------------------------- HYPERPARAMETERS ----------------------------------
+# ---------------------------------- OPTIMIZATION ----------------------------------
 lr = 1e-4
 betas = (0.9, 0.999)
 eps = 1e-8
@@ -100,6 +100,15 @@ loss = loss_fn(y_pred, y.type(torch.LongTensor))
 print(loss)
 print(model)
 '''
+
+def check_early_stopping(val_acc, val_acc_history):
+    n_epochs = 5
+    prev_val_accs = val_acc_history[-(n_epochs+1):]
+    if len(np.where(val_acc < prev_val_accs)) is 0:
+        print('Stopping early')
+        perform_plotting()
+        save_model(model)
+        raise SystemExit
 
 n_train = X_train.shape[0] # 177125
 n_validation = X_valid.shape[0] # 87250
@@ -156,25 +165,31 @@ for t in range(n_iter):
         save_checkpoint(epoch, loss_history, train_acc_history, val_acc_history, best_val_acc)
 
         print('(Epoch %d / %d) train acc: %f; val_acc: %f' % (epoch, n_epochs, train_acc, val_acc))
+        check_early_stopping(val_acc, val_acc_history)
 
 # ------------------------------------- PLOTTING -------------------------------------
-plt.rcParams['figure.figsize'] = (10.0, 8.0) # set default size of plots
+def perform_plotting():
+    plt.rcParams['figure.figsize'] = (10.0, 8.0) # set default size of plots
 
-# Training loss over iterations
-plt.subplot(2, 1, 1)
-plt.plot(loss_history, 'o')
-plt.xlabel('Iterations')
-plt.ylabel('Loss')
+    # Training loss over iterations
+    plt.subplot(2, 1, 1)
+    plt.plot(loss_history, 'o')
+    plt.xlabel('Iterations')
+    plt.ylabel('Loss')
 
-# Training and validation accuracy over epochs
-plt.subplot(2, 1, 2)
-plt.plot(train_acc_history, '-o')
-plt.plot(val_acc_history, '-o')
-plt.legend(['train', 'val'], loc='upper left')
-plt.xlabel('Epochs')
-plt.ylabel('Accuracy')
-plt.show()
+    # Training and validation accuracy over epochs
+    plt.subplot(2, 1, 2)
+    plt.plot(train_acc_history, '-o')
+    plt.plot(val_acc_history, '-o')
+    plt.legend(['train', 'val'], loc='upper left')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.show()
+perform_plotting()
 
 # Testing performance
 test_acc = check_accuracy(model, X_test, Y_test, testing=True)
 print('Testing accuracy:', test_acc)
+
+# Save model
+save_model(model)

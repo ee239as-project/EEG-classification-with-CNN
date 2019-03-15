@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import os.path
 import torch
+import pickle
 from torch.autograd import Variable
 from sklearn.model_selection import train_test_split
 
@@ -263,6 +264,12 @@ def load_preprocess_eeg_data(person=None, crop=True):
     Y_test = np.abs(769 - y_test)
 
     return X_train, X_valid, X_test, Y_train, Y_valid, Y_test
+
+def save_model(model):
+    print('Saving model')
+    filename = '../Data/cnn_model.pkl'
+    with open(filename, 'wb') as f:
+        pickle.dump(model, f)
 
 
 if __name__ == '__main__':
