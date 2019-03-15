@@ -10,15 +10,20 @@ import pickle
 from Utils.preprocess_util import *
 
 
-def get_accuracy(ouput, target, batch_size):
+def get_accuracy(ouput, target, batch_size, testing=False):
     # get accuracy for training batch
-    classes_predicted = torch.max(ouput, 1)[1]
-    correct = (np.equal(classes_predicted.tolist(), target.tolist()).astype(int)).sum()
-    # correct = (max_values[1].view(target.size()).data == target.data).sum()
+    pred_classes = torch.max(ouput, 1)[1].tolist()
+
+    # during testing, the mean of the 125 cropped trial predictions is used as the
+    # final prediction value for each cropped trial
+    if testing:
+        pred_classes = np.repeat(np.mean(pred_classes), len(pred_classes))
+
+    correct = (np.equal(pred_classes, target.tolist()).astype(int)).sum()
     accuracy = 100.0 * correct / batch_size
     return accuracy.item()
 
-def check_accuracy(model, X, y, num_samples=None, batch_size=125):
+def check_accuracy(model, X, y, num_samples=None, batch_size=125, testing=False):
     # Subsample the data
     N = X.shape[0]
     N_subsample = N // 500 # 0.2% subsample of data
@@ -39,7 +44,7 @@ def check_accuracy(model, X, y, num_samples=None, batch_size=125):
         y_pred = model(X_tensor.float())
         y_true = y[start:end]
 
-        acc = get_accuracy(y_pred, y_true, len(y_true))
+        acc = get_accuracy(y_pred, y_true, len(y_true), testing)
         accuracies.append(acc)
 
     return np.mean(accuracies)

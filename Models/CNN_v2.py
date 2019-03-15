@@ -27,13 +27,6 @@ Test data: (55375, 22, 500)
 Test target: (55375,)
 '''
 
-# CPU datatype: change to torch.cuda.FloatTensor to use GPU
-dtype = torch.FloatTensor
-x = Variable(torch.tensor(X_train))
-y = Variable(torch.tensor(Y_train), requires_grad=False)
-x.type(dtype)
-y.type(dtype)
-
 # ------------------------------------- CNN MODEL -------------------------------------
 class Flatten(nn.Module):
     def forward(self, x):
@@ -66,6 +59,8 @@ model.add_module('Fc_layer', nn.Linear(2560,10))
 torch.nn.init.xavier_uniform_(model.conv_across_time.weight, gain=1)
 torch.nn.init.xavier_uniform_(model.conv_across_electrodes.weight, gain=1)
 
+# CPU datatype: change to torch.cuda.FloatTensor to use GPU
+dtype = torch.FloatTensor
 model.type(dtype)
 loss_fn = nn.CrossEntropyLoss().type(dtype)
 
@@ -85,6 +80,10 @@ optimizer = optim.Adam(params, lr=lr, betas=betas, eps=eps, weight_decay=wt_dcy,
 
 # ------------------------------------- TRAINING -------------------------------------
 '''
+x = Variable(torch.tensor(X_train))
+y = Variable(torch.tensor(Y_train), requires_grad=False)
+x.type(dtype)
+y.type(dtype)
 for t in range(3):
     # calculate loss
     y_pred = model(x.float())
@@ -175,3 +174,7 @@ plt.legend(['train', 'val'], loc='upper left')
 plt.xlabel('Epochs')
 plt.ylabel('Accuracy')
 plt.show()
+
+# Testing performance
+test_acc = check_accuracy(model, X_test, Y_test, testing=True)
+print('Testing accuracy:', test_acc)
