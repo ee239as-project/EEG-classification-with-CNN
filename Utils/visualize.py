@@ -26,7 +26,7 @@ def get_accuracy(ouput, target, batch_size, testing=False):
 def check_accuracy(model, X, y, num_samples=None, batch_size=125, testing=False):
     # Subsample the data
     N = X.shape[0]
-    N_subsample = N // 500 # 0.2% subsample of data
+    N_subsample = N // 500 # subsample of data
     if num_samples > N_subsample:
         mask = np.random.choice(N, N_subsample)
         N = N_subsample

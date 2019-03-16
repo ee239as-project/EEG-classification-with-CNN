@@ -17,7 +17,7 @@ from Utils.visualize import *
 
 
 # ----------------------------------- PREPROCESSING -----------------------------------
-X_train,X_valid,X_test, Y_train,Y_valid,Y_test = load_preprocess_eeg_data()
+X_train,X_valid,X_test, Y_train,Y_valid,Y_test = load_preprocess_eeg_data(subsample_data=False)
 '''
 Training data: (177125, 22, 500)
 Training target: (177125,)
@@ -34,30 +34,52 @@ class Flatten(nn.Module):
         a = x.view(x.size(0), -1)
         return a
 
+class twod_to_threed(nn.Module):
+    def forward(self, x):
+        # print('twod_to_threed x:', x.shape)
+        a = x.reshape(x.shape[0], x.shape[1], -1, x.shape[2])
+        # print('twod_to_threed a:', a.shape)
+        return a
+
 class threed_to_twod(nn.Module):
     def forward(self, x):
         # example x.shape: ([125, 40, 1, 450])
-        a = x.reshape(x.shape[0], x.shape[3], x.shape[1])
+        # print('x:', x.shape)
+        a = x.reshape(x.shape[0], x.shape[1], x.shape[3])
         # example a.shape: ([125, 450, 40])
+        # print('a:', a.shape)
         return a
 
-dropout = 0.5
+class threed_to_oned(nn.Module):
+    def forward(self, x):
+        # print('threed_to_oned x:', x.shape)
+        a = x.reshape(x.shape[0], -1)
+        # print('threed_to_oned a:', a.shape)
+        return a
+
 model = nn.Sequential()
 # recommended kernel size of 25
 # After the two convolutions of the shallow ConvNet, a squaring nonlinearity, a mean pooling
 # layer and a logarithmic activation function followed
-model.add_module('conv_across_time', nn.Conv2d(1, 40, kernel_size=(1,51) ,stride=1))
+# Input: (125,1,22,500)
+model.add_module('conv_across_time', nn.Conv2d(1, 40, kernel_size=(1,51), stride=1))
 model.add_module('conv_across_electrodes', nn.Conv2d(40, 40, kernel_size=(22,1), stride=1))
 # apply batch norm to the output of conv layers before the nonlinearity
 model.add_module('BatchNorm2d', nn.BatchNorm2d(40, momentum=0.1))
 model.add_module('Nonlinearity', nn.ELU(inplace=True))
 model.add_module('correct_dimensions', threed_to_twod())
-model.add_module('AvgPool2d', nn.AvgPool2d(kernel_size=(135,1), stride=(5,1)))
-model.add_module('drop', nn.Dropout(p=dropout))
-model.add_module('Flatten', Flatten())
-model.add_module('Fc_layer', nn.Linear(2560,10))
+model.add_module('AvgPool2d', nn.AvgPool2d(kernel_size=(1,76), stride=(1,15)))
+model.add_module('drop', nn.Dropout(p=0.5))
+# model.add_module('Flatten', Flatten())
+# model.add_module('Fc_layer', nn.Linear(2560,10))
+model.add_module('correct_dimensions_2', twod_to_threed())
+model.add_module('conv_classifier', nn.Conv2d(40, 4, kernel_size=(1,25), stride=1))
+model.add_module('correct_dimensions_3', threed_to_oned())
+# model.add_module('Flatten', Flatten())
+# model.add_module('Fc_layer', nn.Linear(2560,10))
 torch.nn.init.xavier_uniform_(model.conv_across_time.weight, gain=1)
 torch.nn.init.xavier_uniform_(model.conv_across_electrodes.weight, gain=1)
+torch.nn.init.xavier_uniform_(model.conv_classifier.weight, gain=1)
 
 # CPU datatype: change to torch.cuda.FloatTensor to use GPU
 dtype = torch.FloatTensor
@@ -100,14 +122,14 @@ loss = loss_fn(y_pred, y.type(torch.LongTensor))
 print(loss)
 print(model)
 '''
-
 def check_early_stopping(val_acc, val_acc_history):
+    save_model(model)
+
     n_epochs = 5
     prev_val_accs = val_acc_history[-(n_epochs+1):]
     if len(np.where(val_acc < prev_val_accs)) is 0:
         print('Stopping early')
         perform_plotting()
-        save_model(model)
         raise SystemExit
 
 n_train = X_train.shape[0] # 177125

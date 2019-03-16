@@ -7,7 +7,7 @@ from torch.autograd import Variable
 from sklearn.model_selection import train_test_split
 
 
-def exponential_running_demean(data,factor_new=0.001):
+def exponential_running_demean(data, factor_new=0.001):
     """
     computes exponential moving mean for each channel given by the formula in
     https://arxiv.org/abs/1703.05051
@@ -52,7 +52,7 @@ def exponential_running_standardize(data, factor_new=0.001, eps=1e-4):
     return np.array(standardized)
 
 def threeD_to_fourDTensor(X):
-    return Variable(torch.tensor(X.reshape((X.shape[0],1,X.shape[1],X.shape[2],))))
+    return Variable(torch.tensor(X.reshape((X.shape[0],1,X.shape[1],X.shape[2]))))
 
 '''
 Crops 4 sec time interval into 2 second chunks at intervals .016 seconds apart
@@ -187,7 +187,52 @@ def crop_trials(X_train, y_train, X_valid, y_valid, X_test, y_test,
 
     return X_train, y_train, X_valid, y_valid, X_test, y_test, person_tr, person_test
 
-def load_preprocess_eeg_data(person=None, crop=True):
+def subsample(X_train, X_valid, X_test, Y_train, Y_valid, Y_test):
+    n_train = X_train.shape[0] // 20
+    n_valid = X_valid.shape[0] // 20
+    n_test = X_test.shape[0] // 20 # get 5% of data
+
+    X_train = X_train[:n_train]
+    Y_train = Y_train[:n_train]
+    X_valid = X_valid[:n_valid]
+    Y_valid = Y_valid[:n_valid]
+    X_test = X_test[:n_test]
+    Y_test = Y_test[:n_test]
+
+    return X_train, X_valid, X_test, Y_train, Y_valid, Y_test
+
+def load_preprocess_eeg_data(person=None, subsample_data=False):
+    X_train_f = '../Data/X_train_c.npy'
+    y_train_f = '../Data/y_train_c.npy'
+    X_valid_f = '../Data/X_valid_c.npy'
+    y_valid_f = '../Data/y_valid_c.npy'
+    X_test_f = '../Data/X_test_c.npy'
+    y_test_f = '../Data/y_test_c.npy'
+
+    # load all cropped data if already saved
+    if os.path.exists(X_train_f):
+        X_train = np.load(X_train_f)
+        Y_train = np.load(y_train_f)
+        X_valid = np.load(X_valid_f)
+        Y_valid = np.load(y_valid_f)
+        X_test = np.load(X_test_f)
+        Y_test = np.load(y_test_f)
+
+        if subsample_data:
+            X_train, X_valid, X_test, Y_train, Y_valid, Y_test = subsample(X_train, X_valid,
+                                                                           X_test, Y_train,
+                                                                           Y_valid, Y_test)
+
+        print('Training data: {}'.format(X_train.shape))
+        print('Training target: {}'.format(Y_train.shape))
+        print('Validation data: {}'.format(X_valid.shape))
+        print('Validation target: {}'.format(Y_valid.shape))
+        print('Test data: {}'.format(X_test.shape))
+        print('Test target: {}'.format(Y_test.shape))
+
+        return X_train, X_valid, X_test, Y_train, Y_valid, Y_test
+
+
     # only use first 22 electrodes which are EEG not EOG
     X_train_valid = np.load('../Data/X_train_valid.npy')[:,0:22,:]
     y_train_valid = np.load('../Data/y_train_valid.npy')
@@ -209,7 +254,7 @@ def load_preprocess_eeg_data(person=None, crop=True):
 
     X_train, X_valid, y_train, y_valid = train_test_split(X_train_valid,
                                                           y_train_valid,
-                                                          test_size=0.33,
+                                                          test_size=0.2,
                                                           random_state=42)
 
     # electrode-wise exponenential moving standardization of the continuous data
