@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import os.path
 import torch
+import pickle
 from torch.autograd import Variable
 from sklearn.model_selection import train_test_split
 
@@ -135,8 +136,8 @@ def crop_trials(X_train, y_train, X_valid, y_valid, X_test, y_test,
         y_valid_f = '../Data/y_valid_c.npy'
         X_test_f = '../Data/X_test_c.npy'
         y_test_f = '../Data/y_test_c.npy'
-        person_tr_f = '../Data/person_train_valid_c.npy'
-        person_test_f = '../Data/person_test_c.npy'
+        # person_tr_f = '../Data/person_train_valid_c.npy'
+        # person_test_f = '../Data/person_test_c.npy'
     else:
         str_p = str(person)
         X_train_f = '../Data/X_train_c_'+ str_p +'.npy'
@@ -145,8 +146,8 @@ def crop_trials(X_train, y_train, X_valid, y_valid, X_test, y_test,
         y_valid_f = '../Data/y_valid_c_'+ str_p +'.npy'
         X_test_f = '../Data/X_test_c_'+ str_p +'.npy'
         y_test_f = '../Data/y_test_c_'+ str_p +'.npy'
-        person_tr_f = '../Data/person_train_valid_c_'+ str_p +'.npy'
-        person_test_f = '../Data/person_test_c_'+ str_p +'.npy'
+        # person_tr_f = '../Data/person_train_valid_c_'+ str_p +'.npy'
+        # person_test_f = '../Data/person_test_c_'+ str_p +'.npy'
 
     # training data
     if not os.path.exists(X_train_f) or not os.path.exists(y_train_f):
@@ -265,6 +266,12 @@ def load_preprocess_eeg_data(person=None, crop=True):
     Y_test = np.abs(769 - y_test)
 
     return X_train, X_valid, X_test, Y_train, Y_valid, Y_test
+
+def save_model(model):
+    print('Saving model')
+    filename = '../Data/cnn_model.pkl'
+    with open(filename, 'wb') as f:
+        pickle.dump(model, f)
 
 
 if __name__ == '__main__':
