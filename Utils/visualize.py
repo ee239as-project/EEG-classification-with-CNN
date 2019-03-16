@@ -8,8 +8,9 @@ import numpy as np
 import torch
 import pickle
 from Utils.preprocess_util import *
+from Utils.cnn_helpers import *
 
-
+# ------------------------------------ ACCURACY ------------------------------------
 def get_accuracy(ouput, target, batch_size, testing=False):
     # get accuracy for training batch
     pred_classes = torch.max(ouput, 1)[1].tolist()
@@ -23,11 +24,10 @@ def get_accuracy(ouput, target, batch_size, testing=False):
     accuracy = 100.0 * correct / batch_size
     return accuracy.item()
 
-def check_accuracy(model, X, y, num_samples=None, batch_size=125, testing=False):
-    # Subsample the data
+def check_accuracy(model, X, y, subsample=True, testing=False, batch_size=125):
     N = X.shape[0]
-    N_subsample = N // 500 # subsample of data
-    if num_samples > N_subsample:
+    if subsample:
+        N_subsample = N // 500 # 0.2% subsample of data
         mask = np.random.choice(N, N_subsample)
         N = N_subsample
         X = X[mask]
@@ -35,7 +35,7 @@ def check_accuracy(model, X, y, num_samples=None, batch_size=125, testing=False)
 
     # Compute predictions in batches
     n_batches = N // batch_size
-    accuracies = []
+    wtd_accuracies = []
     for i in range(n_batches):
         start = i * batch_size
         end = (i+1) * batch_size
@@ -44,10 +44,11 @@ def check_accuracy(model, X, y, num_samples=None, batch_size=125, testing=False)
         y_pred = model(X_tensor.float())
         y_true = y[start:end]
 
-        acc = get_accuracy(y_pred, y_true, len(y_true), testing)
-        accuracies.append(acc)
+        n_samples = len(y_true)
+        acc = get_accuracy(y_pred, y_true, n_samples, testing)
+        wtd_accuracies.append(acc * (n_samples / N))
 
-    return np.mean(accuracies)
+    return np.sum(wtd_accuracies)
 
 def save_checkpoint(epoch, loss_history, train_acc_history, val_acc_history,
                     best_val_acc, model='cnn'):
@@ -62,3 +63,34 @@ def save_checkpoint(epoch, loss_history, train_acc_history, val_acc_history,
     print('Saving checkpoint to %s' % filename)
     with open(filename, 'wb') as f:
         pickle.dump(checkpoint, f)
+
+# ---------------------------------- MODEL EVALUATION ----------------------------------
+def evaluate_model():
+    # Load model
+    f = '../Data/cnn_model_16_epochs.pkl' # change to evaluate other model
+    file = open(f,'rb')
+    model = pickle.load(file)
+    file.close()
+
+    # Load data
+    print('Loading data')
+    X_valid_f = '../Data/X_valid_c.npy'
+    y_valid_f = '../Data/y_valid_c.npy'
+    X_test_f = '../Data/X_test_c.npy'
+    y_test_f = '../Data/y_test_c.npy'
+    X_valid = np.load(X_valid_f)
+    Y_valid = np.load(y_valid_f)
+
+    print('Evaluating model...')
+    valid_acc = check_accuracy(model, X_valid, Y_valid, subsample=False)
+    print('Validation accuracy:', valid_acc)
+    del X_valid, Y_valid
+
+    X_test = np.load(X_test_f)
+    Y_test = np.load(y_test_f)
+    test_acc = check_accuracy(model, X_test, Y_test, subsample=False, testing=True)
+    print('Testing accuracy:', test_acc)
+    del X_test, Y_test
+
+if __name__ == '__main__':
+    evaluate_model()

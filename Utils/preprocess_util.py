@@ -52,7 +52,7 @@ def exponential_running_standardize(data, factor_new=0.001, eps=1e-4):
     return np.array(standardized)
 
 def threeD_to_fourDTensor(X):
-    return Variable(torch.tensor(X.reshape((X.shape[0],1,X.shape[1],X.shape[2]))))
+    return Variable(torch.tensor(X.reshape((X.shape[0], 1, X.shape[1], X.shape[2]))))
 
 '''
 Crops 4 sec time interval into 2 second chunks at intervals .016 seconds apart

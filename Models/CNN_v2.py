@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from torch.autograd import Variable
 from Utils.preprocess_util import *
 from Utils.visualize import *
-
+from Utils.cnn_helpers import *
 
 # ----------------------------------- PREPROCESSING -----------------------------------
 X_train,X_valid,X_test, Y_train,Y_valid,Y_test = load_preprocess_eeg_data(subsample_data=False)
@@ -28,37 +28,8 @@ Test target: (55375,)
 '''
 
 # ------------------------------------- CNN MODEL -------------------------------------
-class Flatten(nn.Module):
-    def forward(self, x):
-        # example x.size: ([125, 64, 40])
-        a = x.view(x.size(0), -1)
-        return a
-
-class twod_to_threed(nn.Module):
-    def forward(self, x):
-        # print('twod_to_threed x:', x.shape)
-        a = x.reshape(x.shape[0], x.shape[1], -1, x.shape[2])
-        # print('twod_to_threed a:', a.shape)
-        return a
-
-class threed_to_twod(nn.Module):
-    def forward(self, x):
-        # example x.shape: ([125, 40, 1, 450])
-        # print('x:', x.shape)
-        a = x.reshape(x.shape[0], x.shape[1], x.shape[3])
-        # example a.shape: ([125, 450, 40])
-        # print('a:', a.shape)
-        return a
-
-class threed_to_oned(nn.Module):
-    def forward(self, x):
-        # print('threed_to_oned x:', x.shape)
-        a = x.reshape(x.shape[0], -1)
-        # print('threed_to_oned a:', a.shape)
-        return a
-
 model = nn.Sequential()
-# recommended kernel size of 25
+# Recommended kernel size of 25
 # After the two convolutions of the shallow ConvNet, a squaring nonlinearity, a mean pooling
 # layer and a logarithmic activation function followed
 # Input: (125,1,22,500)
@@ -95,7 +66,7 @@ amsgrad = False
 '''
 wt_scale = 0.01
 reg = 0.001
-lr_decay = 0.9
+lr_decay = 0.9 - Adam does implicitly
 '''
 params = model.parameters()
 optimizer = optim.Adam(params, lr=lr, betas=betas, eps=eps, weight_decay=wt_dcy, amsgrad=amsgrad)
@@ -178,8 +149,8 @@ for t in range(n_iter):
     last_iter = (t == n_iter - 1)
 
     if first_iter or last_iter or epoch_end:
-        train_acc = check_accuracy(model, X_train, Y_train, n_train)
-        val_acc = check_accuracy(model, X_valid, Y_valid, n_validation)
+        train_acc = check_accuracy(model, X_train, Y_train, subsample=True)
+        val_acc = check_accuracy(model, X_valid, Y_valid, subsample=True)
         train_acc_history.append(train_acc)
         val_acc_history.append(val_acc)
 
@@ -210,7 +181,7 @@ def perform_plotting():
 perform_plotting()
 
 # Testing performance
-test_acc = check_accuracy(model, X_test, Y_test, testing=True)
+test_acc = check_accuracy(model, X_test, Y_test, subsample=True, testing=True)
 print('Testing accuracy:', test_acc)
 
 # Save model
