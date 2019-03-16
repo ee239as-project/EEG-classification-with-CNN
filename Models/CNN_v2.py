@@ -8,7 +8,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import matplotlib.pyplot as plt
 # Variable: wrapper for PyTorch tensor, stores gradients with requires_grad=True
 # x.data, x.grad.data: values of tensor x, gradient values of x
 from torch.autograd import Variable
@@ -46,8 +45,6 @@ model.add_module('drop', nn.Dropout(p=0.5))
 model.add_module('correct_dimensions_2', twod_to_threed())
 model.add_module('conv_classifier', nn.Conv2d(40, 4, kernel_size=(1,25), stride=1))
 model.add_module('correct_dimensions_3', threed_to_oned())
-# model.add_module('Flatten', Flatten())
-# model.add_module('Fc_layer', nn.Linear(2560,10))
 torch.nn.init.xavier_uniform_(model.conv_across_time.weight, gain=1)
 torch.nn.init.xavier_uniform_(model.conv_across_electrodes.weight, gain=1)
 torch.nn.init.xavier_uniform_(model.conv_classifier.weight, gain=1)
@@ -161,24 +158,7 @@ for t in range(n_iter):
         check_early_stopping(val_acc, val_acc_history)
 
 # ------------------------------------- PLOTTING -------------------------------------
-def perform_plotting():
-    plt.rcParams['figure.figsize'] = (10.0, 8.0) # set default size of plots
-
-    # Training loss over iterations
-    plt.subplot(2, 1, 1)
-    plt.plot(loss_history, 'o')
-    plt.xlabel('Iterations')
-    plt.ylabel('Loss')
-
-    # Training and validation accuracy over epochs
-    plt.subplot(2, 1, 2)
-    plt.plot(train_acc_history, '-o')
-    plt.plot(val_acc_history, '-o')
-    plt.legend(['train', 'val'], loc='upper left')
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
-    plt.show()
-perform_plotting()
+perform_plotting(loss_history, train_acc_history, val_acc_history)
 
 # Testing performance
 test_acc = check_accuracy(model, X_test, Y_test, subsample=True, testing=True)

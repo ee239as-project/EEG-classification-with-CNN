@@ -288,11 +288,10 @@ def load_preprocess_eeg_data(person=None, subsample_data=False):
     Person train/validation: (2115, 1)
     Person test: (443, 1)
     '''
-
     # implement cropped training strategy (https://arxiv.org/pdf/1703.05051.pdf)
-#    X_train, y_train, X_valid, y_valid, X_test, y_test, person_train_valid,
-#    person_test = crop_trials(X_train, y_train, X_valid, y_valid, X_test, y_test,
-#                              person_train_valid, person_test)
+    X_train, y_train, X_valid, y_valid, X_test, y_test, person_train_valid,
+    person_test = crop_trials(X_train, y_train, X_valid, y_valid, X_test, y_test,
+                              person_train_valid, person_test)
     '''
     After cropping:
     Training data: (177125, 22, 500)
