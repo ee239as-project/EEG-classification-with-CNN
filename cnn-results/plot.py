@@ -41,5 +41,5 @@ if __name__ == '__main__':
     data_start = np.loadtxt("cnn-loss-data-start.csv")
 
 
-    visualize( data, window = 20, total = data.shape[0], zeroes = True )
-    visualize( data_start , window = 20, total = data.shape[0], zeroes = True )
+    visualize( data, window = 1, total = data.shape[0], zeroes = True )
+    # visualize( data_start , window = 1, total = data.shape[0], zeroes = True )
