@@ -1,4 +1,9 @@
+import torch
 import torch.nn as nn
+from torch.autograd import Variable
+
+def threeD_to_fourDTensor(X):
+    return Variable(torch.tensor(X.reshape((X.shape[0], 1, X.shape[1], X.shape[2]))))
 
 # ---------------------------------- CNN MODEL HELPERS ----------------------------------
 class Flatten(nn.Module):

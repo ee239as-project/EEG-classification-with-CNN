@@ -12,12 +12,12 @@ from Utils.preprocess_util import *
 from Utils.cnn_helpers import *
 
 # ------------------------------------ ACCURACY ------------------------------------
-def get_accuracy(predictions, target, testing=True):
+def get_accuracy(predictions, target, cropped_testing=False):
     target = target.tolist()
 
-    # during testing, the mean of the 125 cropped trial predictions is used as the
-    # final prediction value for each cropped trial
-    if testing:
+    # during cropped trials testing, the mean of the 125 cropped trial predictions is used
+    # as the final prediction value for each cropped trial
+    if cropped_testing:
         mean_preds = torch.mean(predictions, 0)
         pred = int(torch.argmax(mean_preds))
         return pred == target[0]
@@ -29,10 +29,10 @@ def get_accuracy(predictions, target, testing=True):
     correct = np.sum(np.equal(preds, target))
     return 100 * correct / n_samples
 
-def check_accuracy(model, X, y, subsample=True, testing=False, batch_size=125):
+def check_accuracy(model, X, y, subsample=False, testing=False, batch_size=125):
     N = X.shape[0]
     if subsample:
-        N_subsample = N // 500 # 0.2% subsample of data
+        N_subsample = N // 10 # 10% subsample of data
         mask = np.random.choice(N, N_subsample)
         N = N_subsample
         X = X[mask]
@@ -64,7 +64,7 @@ def save_checkpoint(epoch, loss_history, train_acc_history, val_acc_history,
       'val_acc_history': val_acc_history,
       'best_val_acc': best_val_acc,
     }
-    filename = '../Data/%s_epoch_%d.pkl' % (model, epoch)
+    filename = '../Data/%s_fast_epoch_%d.pkl' % (model, epoch)
     print('Saving checkpoint to %s' % filename)
     with open(filename, 'wb') as f:
         pickle.dump(checkpoint, f)
@@ -75,7 +75,7 @@ def perform_plotting(loss_history, train_acc_history, val_acc_history):
 
     # Training loss over iterations
     plt.subplot(2, 1, 1)
-    plt.plot(loss_history, ',')
+    plt.plot(loss_history, '-.')
     plt.xlabel('Iterations')
     plt.ylabel('Loss')
 
@@ -90,7 +90,7 @@ def perform_plotting(loss_history, train_acc_history, val_acc_history):
 
 def evaluate_model():
     # Load loss and accuracy history
-    f = '../Data/cnn_epoch_19.pkl' # change to evaluate other epoch
+    f = '../Data/cnn_fast_epoch_100.pkl' # change to evaluate other epoch
     file = open(f,'rb')
     epoch = pickle.load(file)
     file.close()
@@ -99,28 +99,28 @@ def evaluate_model():
     perform_plotting(epoch['loss_history'], epoch['train_acc_history'], epoch['val_acc_history'])
 
     # Load model
-    f = '../Data/cnn_model_16_epochs.pkl' # change to evaluate other model
+    f = '../Data/cnn_model_fast.pkl' # change to evaluate other model
     file = open(f,'rb')
     model = pickle.load(file)
     file.close()
 
     # Load data
     print('Loading data')
-    X_valid_f = '../Data/X_valid_c.npy'
-    y_valid_f = '../Data/y_valid_c.npy'
-    X_test_f = '../Data/X_test_c.npy'
-    y_test_f = '../Data/y_test_c.npy'
-    # X_valid = np.load(X_valid_f)
-    # Y_valid = np.load(y_valid_f)
+    X_valid_f = '../Data/X_valid.npy'
+    y_valid_f = '../Data/y_valid.npy'
+    X_test_f = '../Data/X_test.npy'
+    y_test_f = '../Data/y_test.npy'
+    X_valid = np.load(X_valid_f)
+    Y_valid = np.load(y_valid_f)
 
-    # print('Evaluating model...')
-    # valid_acc = check_accuracy(model, X_valid, Y_valid, subsample=False)
-    # print('Validation accuracy:', valid_acc)
-    # del X_valid, Y_valid
+    print('Evaluating model...')
+    valid_acc = check_accuracy(model, X_valid, Y_valid)
+    print('Validation accuracy:', valid_acc)
+    del X_valid, Y_valid
 
     X_test = np.load(X_test_f)
     Y_test = np.load(y_test_f)
-    test_acc = check_accuracy(model, X_test, Y_test, subsample=False, testing=True)
+    test_acc = check_accuracy(model, X_test, Y_test)
     print('Testing accuracy:', test_acc)
     del X_test, Y_test
 

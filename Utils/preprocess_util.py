@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import os.path
-import torch
 import pickle
 from torch.autograd import Variable
 from sklearn.model_selection import train_test_split
@@ -50,9 +49,6 @@ def exponential_running_standardize(data, factor_new=0.001, eps=1e-4):
     standardized = demeaned / np.maximum(eps, np.sqrt(np.array(square_ewmed)))
 
     return np.array(standardized)
-
-def threeD_to_fourDTensor(X):
-    return Variable(torch.tensor(X.reshape((X.shape[0], 1, X.shape[1], X.shape[2]))))
 
 '''
 Crops 4 sec time interval into 2 second chunks at intervals .016 seconds apart
@@ -201,16 +197,15 @@ def subsample(X_train, X_valid, X_test, Y_train, Y_valid, Y_test):
 
     return X_train, X_valid, X_test, Y_train, Y_valid, Y_test
 
-def load_preprocess_eeg_data(person=None, subsample_data=False):
+def load_preprocess_eeg_data(person=None, subsample_data=False, crop_trials=False):
     X_train_f = '../Data/X_train_c.npy'
-    y_train_f = '../Data/y_train_c.npy'
-    X_valid_f = '../Data/X_valid_c.npy'
-    y_valid_f = '../Data/y_valid_c.npy'
-    X_test_f = '../Data/X_test_c.npy'
-    y_test_f = '../Data/y_test_c.npy'
-
     # load all cropped data if already saved
-    if os.path.exists(X_train_f):
+    if crop_trials and os.path.exists(X_train_f):
+        y_train_f = '../Data/y_train_c.npy'
+        X_valid_f = '../Data/X_valid_c.npy'
+        y_valid_f = '../Data/y_valid_c.npy'
+        X_test_f = '../Data/X_test_c.npy'
+        y_test_f = '../Data/y_test_c.npy'
         X_train = np.load(X_train_f)
         Y_train = np.load(y_train_f)
         X_valid = np.load(X_valid_f)
@@ -229,9 +224,30 @@ def load_preprocess_eeg_data(person=None, subsample_data=False):
         print('Validation target: {}'.format(Y_valid.shape))
         print('Test data: {}'.format(X_test.shape))
         print('Test target: {}'.format(Y_test.shape))
-
         return X_train, X_valid, X_test, Y_train, Y_valid, Y_test
 
+    X_train_f = '../Data/X_train.npy'
+    if os.path.exists(X_train_f):
+        y_train_f = '../Data/y_train.npy'
+        X_valid_f = '../Data/X_valid.npy'
+        y_valid_f = '../Data/y_valid.npy'
+        X_test_f = '../Data/X_test.npy'
+        y_test_f = '../Data/y_test.npy'
+        X_train = np.load(X_train_f)
+        Y_train = np.load(y_train_f)
+        X_valid = np.load(X_valid_f)
+        Y_valid = np.load(y_valid_f)
+        X_test = np.load(X_test_f)
+        Y_test = np.load(y_test_f)
+
+        print('Training data: {}'.format(X_train.shape))
+        print('Training target: {}'.format(Y_train.shape))
+        print('Validation data: {}'.format(X_valid.shape))
+        print('Validation target: {}'.format(Y_valid.shape))
+        print('Test data: {}'.format(X_test.shape))
+        print('Test target: {}'.format(Y_test.shape))
+
+        return X_train, X_valid, X_test, Y_train, Y_valid, Y_test
 
     # only use first 22 electrodes which are EEG not EOG
     X_train_valid = np.load('../Data/X_train_valid.npy')[:,0:22,:]
@@ -313,7 +329,7 @@ def load_preprocess_eeg_data(person=None, subsample_data=False):
 
 def save_model(model):
     print('Saving model')
-    filename = '../Data/cnn_model.pkl'
+    filename = '../Data/cnn_model_fast.pkl'
     with open(filename, 'wb') as f:
         pickle.dump(model, f)
 
