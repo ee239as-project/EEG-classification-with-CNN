@@ -226,6 +226,7 @@ def load_preprocess_eeg_data(person=None, subsample_data=False, crop_trials=Fals
         print('Test target: {}'.format(Y_test.shape))
         return X_train, X_valid, X_test, Y_train, Y_valid, Y_test
 
+    # load all uncropped data if already saved
     X_train_f = '../Data/X_train.npy'
     if os.path.exists(X_train_f):
         y_train_f = '../Data/y_train.npy'
@@ -249,6 +250,7 @@ def load_preprocess_eeg_data(person=None, subsample_data=False, crop_trials=Fals
 
         return X_train, X_valid, X_test, Y_train, Y_valid, Y_test
 
+    # from given project data files, preprocess data and then save
     # only use first 22 electrodes which are EEG not EOG
     X_train_valid = np.load('../Data/X_train_valid.npy')[:,0:22,:]
     y_train_valid = np.load('../Data/y_train_valid.npy')
@@ -308,17 +310,6 @@ def load_preprocess_eeg_data(person=None, subsample_data=False, crop_trials=Fals
     X_train, y_train, X_valid, y_valid, X_test, y_test, person_train_valid,
     person_test = crop_trials(X_train, y_train, X_valid, y_valid, X_test, y_test,
                               person_train_valid, person_test)
-    '''
-    After cropping:
-    Training data: (177125, 22, 500)
-    Training target: (177125,)
-    Validation data: (87250, 22, 500)
-    Validation target: (87250,)
-    Test data: (55375, 22, 500)
-    Test target: (55375,)
-    Person train/validation: (264375,)
-    Person test: (55375,)
-    '''
 
     # converts labels to range 0-3 for number of classes
     Y_train = np.abs(769 - y_train)

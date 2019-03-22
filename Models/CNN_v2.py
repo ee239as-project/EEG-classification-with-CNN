@@ -5,6 +5,7 @@ if module_path not in sys.path:
     sys.path.append(module_path)
 
 import numpy as np
+import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -113,6 +114,7 @@ train_acc_history = []
 val_acc_history = []
 
 epoch = 0
+timestamp = time.time()
 for t in range(n_iter):
     # Make a minibatch of training data
     batch_mask = np.random.choice(n_train, batch_size)
@@ -133,11 +135,13 @@ for t in range(n_iter):
     # Print training loss
     if (t%5 == 0):
         print('(Iteration %d / %d) loss: %f' % (t + 1, n_iter, loss_history[-1]))
+        print('Time:', round(time.time() - timestamp, 4))
 
     # At end of every epoch, increment epoch counters and consider decaying learning rate
     epoch_end = (t+1) % iter_per_epoch == 0
     if epoch_end:
         epoch += 1
+        print('Time at epoch end:', round(time.time() - timestamp, 4))
 
     # Check train and val accuracy on first iteration, last iteration, and at end of each epoch
     first_iter = (t == 0)
